@@ -1,0 +1,384 @@
+---
+title: "PML Course Project"
+author: "WayOfPeace"
+date: "Saturday, March 21, 2015"
+output: html_document
+---
+
+#Predicting the Position of A Dumbell
+
+#Summary
+
+The goal of this modeling project is to predict the manner in which participants in an exercise study lifetd a dumbell using data from accelerometers on the belt, forearm, arm, and dumbell collected during the did the exercise.
+
+Models are developed to predict the "classe" variable in the training set using any of the other variables provided.   This report describes the methods for building models and using cross validation to gain confidence in the ability of the model to predict accurately.   The expected out of sample error is provided along with a discussion of model choices. 
+Finally, the best prediction model developed is used to predict 20 different test cases. 
+
+The development and blind test data was provided by researchers at http://groupware.les.inf.puc-rio.br/har as a part of the study:
+
+Velloso, E.; Bulling, A.; Gellersen, H.; Ugulino, W.; Fuks, H. Qualitative Activity Recognition of Weight Lifting Exercises. Proceedings of 4th International Conference in Cooperation with SIGCHI (Augmented Human '13) . Stuttgart, Germany: ACM SIGCHI, 2013.
+
+
+#Data Processing and Cleaning
+
+We load and divide the development data into training and testing data sets in order to run cross validation.  We load the 20 test cases provided by the instructor for evaluation into a separate data file called blindTest.
+
+After examining the file, variables with a large number of missing values (NA) were excluded from the data and analysis to conserve space.
+
+```{r, eval=TRUE}
+  develop<-read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv", na.strings=c("NA",""), header=TRUE)
+  blindTest<-read.csv("http://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv")
+
+  develop$user_name      <-NULL
+  develop$raw_timestamp_part_1      <-NULL
+  develop$raw_timestamp_part_2      <-NULL
+  develop$cvtd_timestamp     <-NULL
+  develop$num_window      <-NULL
+  develop$max_roll_belt      <-NULL
+  develop$max_picth_belt			<-NULL
+  develop$min_roll_belt			<-NULL
+  develop$min_pitch_belt			<-NULL
+  develop$amplitude_roll_belt		<-NULL
+  develop$amplitude_pitch_belt		<-NULL
+  develop$var_total_accel_belt		<-NULL
+  develop$avg_roll_belt			<-NULL
+  develop$stddev_roll_belt		<-NULL
+  develop$var_roll_belt			<-NULL
+  develop$avg_pitch_belt			<-NULL
+  develop$stddev_pitch_belt		<-NULL
+  develop$var_pitch_belt			<-NULL
+  develop$avg_yaw_belt			<-NULL
+  develop$stddev_yaw_belt			<-NULL
+  develop$var_yaw_belt			<-NULL
+  develop$var_accel_arm			<-NULL
+  develop$avg_roll_arm			<-NULL
+  develop$stddev_roll_arm			<-NULL
+  develop$var_roll_arm			<-NULL
+  develop$avg_pitch_arm			<-NULL
+  develop$stddev_pitch_arm		<-NULL
+  develop$var_pitch_arm			<-NULL
+  develop$avg_yaw_arm			<-NULL
+  develop$stddev_yaw_arm			<-NULL
+  develop$var_yaw_arm			<-NULL
+  develop$max_roll_arm			<-NULL
+  develop$max_picth_arm			<-NULL
+  develop$max_yaw_arm			<-NULL
+  develop$min_roll_arm			<-NULL
+  develop$min_pitch_arm			<-NULL
+  develop$min_yaw_arm			<-NULL
+  develop$amplitude_roll_arm		<-NULL
+  develop$amplitude_pitch_arm		<-NULL
+  develop$amplitude_yaw_arm		<-NULL
+  develop$max_roll_dumbbell		<-NULL
+  develop$max_picth_dumbbell		<-NULL
+  develop$min_roll_dumbbell		<-NULL
+  develop$min_pitch_dumbbell		<-NULL
+  develop$amplitude_roll_dumbbell		<-NULL
+  develop$amplitude_pitch_dumbbell	<-NULL
+  develop$var_accel_dumbbell		<-NULL
+  develop$avg_roll_dumbbell		<-NULL
+  develop$stddev_roll_dumbbell		<-NULL
+  develop$var_roll_dumbbell		<-NULL
+  develop$avg_pitch_dumbbell		<-NULL
+  develop$stddev_pitch_dumbbell		<-NULL
+  develop$var_pitch_dumbbell		<-NULL
+  develop$avg_yaw_dumbbell		<-NULL
+  develop$stddev_yaw_dumbbell		<-NULL
+  develop$var_yaw_dumbbell		<-NULL
+  develop$max_roll_forearm		<-NULL
+  develop$max_picth_forearm		<-NULL
+  develop$min_roll_forearm		<-NULL
+  develop$min_pitch_forearm		<-NULL
+  develop$amplitude_roll_forearm		<-NULL
+  develop$amplitude_pitch_forearm		<-NULL
+  develop$var_accel_forearm		<-NULL
+  develop$avg_roll_forearm		<-NULL
+  develop$stddev_roll_forearm		<-NULL
+  develop$var_roll_forearm		<-NULL
+  develop$avg_pitch_forearm		<-NULL
+  develop$stddev_pitch_forearm		<-NULL
+  develop$var_pitch_forearm		<-NULL
+  develop$avg_yaw_forearm			<-NULL
+  develop$stddev_yaw_forearm		<-NULL
+  develop$var_yaw_forearm			<-NULL
+  develop$new_window			<-NULL
+  develop$kurtosis_roll_belt		<-NULL
+  develop$kurtosis_picth_belt		<-NULL
+  develop$kurtosis_yaw_belt		<-NULL
+  develop$skewness_roll_belt		<-NULL
+  develop$skewness_roll_belt.1		<-NULL
+  develop$skewness_yaw_belt		<-NULL
+  develop$max_yaw_belt			<-NULL
+  develop$min_yaw_belt			<-NULL
+  develop$amplitude_yaw_belt		<-NULL
+  develop$kurtosis_roll_arm		<-NULL
+  develop$kurtosis_picth_arm		<-NULL
+  develop$kurtosis_yaw_arm		<-NULL
+  develop$skewness_roll_arm		<-NULL
+  develop$skewness_pitch_arm		<-NULL
+  develop$skewness_yaw_arm		<-NULL
+  develop$kurtosis_roll_dumbbell		<-NULL
+  develop$kurtosis_picth_dumbbell		<-NULL
+  develop$kurtosis_yaw_dumbbell		<-NULL
+  develop$skewness_roll_dumbbell		<-NULL
+  develop$skewness_pitch_dumbbell		<-NULL
+  develop$skewness_yaw_dumbbell		<-NULL
+  develop$max_yaw_dumbbell		<-NULL
+  develop$min_yaw_dumbbell		<-NULL
+  develop$amplitude_yaw_dumbbell		<-NULL
+  develop$kurtosis_roll_forearm		<-NULL
+  develop$kurtosis_picth_forearm		<-NULL
+  develop$kurtosis_yaw_forearm		<-NULL
+  develop$skewness_roll_forearm		<-NULL
+  develop$skewness_pitch_forearm		<-NULL
+  develop$skewness_yaw_forearm		<-NULL
+  develop$max_yaw_forearm			<-NULL
+  develop$min_yaw_forearm			<-NULL
+  develop$amplitude_yaw_forearm		<-NULL
+  develop$X                  <-NULL
+  develop$roll_belt   <-NULL
+  develop$pitch_belt   <-NULL
+  develop$yaw_belt     <-NULL
+  develop$total_accel_belt   <-NULL
+  develop$gyros_belt_x  <-NULL
+  develop$gyros_belt_y         <-NULL
+
+  blindTest$user_name      <-NULL
+  blindTest$raw_timestamp_part_1      <-NULL
+  blindTest$raw_timestamp_part_2      <-NULL
+  blindTest$cvtd_timestamp     <-NULL
+  blindTest$num_window      <-NULL
+  blindTest$max_roll_belt      <-NULL
+  blindTest$max_picth_belt			<-NULL
+  blindTest$min_roll_belt			<-NULL
+  blindTest$min_pitch_belt			<-NULL
+  blindTest$amplitude_roll_belt		<-NULL
+  blindTest$amplitude_pitch_belt		<-NULL
+  blindTest$var_total_accel_belt		<-NULL
+  blindTest$avg_roll_belt			<-NULL
+  blindTest$stddev_roll_belt		<-NULL
+  blindTest$var_roll_belt			<-NULL
+  blindTest$avg_pitch_belt			<-NULL
+  blindTest$stddev_pitch_belt		<-NULL
+  blindTest$var_pitch_belt			<-NULL
+  blindTest$avg_yaw_belt			<-NULL
+  blindTest$stddev_yaw_belt			<-NULL
+  blindTest$var_yaw_belt			<-NULL
+  blindTest$var_accel_arm			<-NULL
+  blindTest$avg_roll_arm			<-NULL
+  blindTest$stddev_roll_arm			<-NULL
+  blindTest$var_roll_arm			<-NULL
+  blindTest$avg_pitch_arm			<-NULL
+  blindTest$stddev_pitch_arm		<-NULL
+  blindTest$var_pitch_arm			<-NULL
+  blindTest$avg_yaw_arm			<-NULL
+  blindTest$stddev_yaw_arm			<-NULL
+  blindTest$var_yaw_arm			<-NULL
+  blindTest$max_roll_arm			<-NULL
+  blindTest$max_picth_arm			<-NULL
+  blindTest$max_yaw_arm			<-NULL
+  blindTest$min_roll_arm			<-NULL
+  blindTest$min_pitch_arm			<-NULL
+  blindTest$min_yaw_arm			<-NULL
+  blindTest$amplitude_roll_arm		<-NULL
+  blindTest$amplitude_pitch_arm		<-NULL
+  blindTest$amplitude_yaw_arm		<-NULL
+  blindTest$max_roll_dumbbell		<-NULL
+  blindTest$max_picth_dumbbell		<-NULL
+  blindTest$min_roll_dumbbell		<-NULL
+  blindTest$min_pitch_dumbbell		<-NULL
+  blindTest$amplitude_roll_dumbbell		<-NULL
+  blindTest$amplitude_pitch_dumbbell	<-NULL
+  blindTest$var_accel_dumbbell		<-NULL
+  blindTest$avg_roll_dumbbell		<-NULL
+  blindTest$stddev_roll_dumbbell		<-NULL
+  blindTest$var_roll_dumbbell		<-NULL
+  blindTest$avg_pitch_dumbbell		<-NULL
+  blindTest$stddev_pitch_dumbbell		<-NULL
+  blindTest$var_pitch_dumbbell		<-NULL
+  blindTest$avg_yaw_dumbbell		<-NULL
+  blindTest$stddev_yaw_dumbbell		<-NULL
+  blindTest$var_yaw_dumbbell		<-NULL
+  blindTest$max_roll_forearm		<-NULL
+  blindTest$max_picth_forearm		<-NULL
+  blindTest$min_roll_forearm		<-NULL
+  blindTest$min_pitch_forearm		<-NULL
+  blindTest$amplitude_roll_forearm		<-NULL
+  blindTest$amplitude_pitch_forearm		<-NULL
+  blindTest$var_accel_forearm		<-NULL
+  blindTest$avg_roll_forearm		<-NULL
+  blindTest$stddev_roll_forearm		<-NULL
+  blindTest$var_roll_forearm		<-NULL
+  blindTest$avg_pitch_forearm		<-NULL
+  blindTest$stddev_pitch_forearm		<-NULL
+  blindTest$var_pitch_forearm		<-NULL
+  blindTest$avg_yaw_forearm			<-NULL
+  blindTest$stddev_yaw_forearm		<-NULL
+  blindTest$var_yaw_forearm			<-NULL
+  blindTest$new_window			<-NULL
+  blindTest$kurtosis_roll_belt		<-NULL
+  blindTest$kurtosis_picth_belt		<-NULL
+  blindTest$kurtosis_yaw_belt		<-NULL
+  blindTest$skewness_roll_belt		<-NULL
+  blindTest$skewness_roll_belt.1		<-NULL
+  blindTest$skewness_yaw_belt		<-NULL
+  blindTest$max_yaw_belt			<-NULL
+  blindTest$min_yaw_belt			<-NULL
+  blindTest$amplitude_yaw_belt		<-NULL
+  blindTest$kurtosis_roll_arm		<-NULL
+  blindTest$kurtosis_picth_arm		<-NULL
+  blindTest$kurtosis_yaw_arm		<-NULL
+  blindTest$skewness_roll_arm		<-NULL
+  blindTest$skewness_pitch_arm		<-NULL
+  blindTest$skewness_yaw_arm		<-NULL
+  blindTest$kurtosis_roll_dumbbell		<-NULL
+  blindTest$kurtosis_picth_dumbbell		<-NULL
+  blindTest$kurtosis_yaw_dumbbell		<-NULL
+  blindTest$skewness_roll_dumbbell		<-NULL
+  blindTest$skewness_pitch_dumbbell		<-NULL
+  blindTest$skewness_yaw_dumbbell		<-NULL
+  blindTest$max_yaw_dumbbell		<-NULL
+  blindTest$min_yaw_dumbbell		<-NULL
+  blindTest$amplitude_yaw_dumbbell		<-NULL
+  blindTest$kurtosis_roll_forearm		<-NULL
+  blindTest$kurtosis_picth_forearm		<-NULL
+  blindTest$kurtosis_yaw_forearm		<-NULL
+  blindTest$skewness_roll_forearm		<-NULL
+  blindTest$skewness_pitch_forearm		<-NULL
+  blindTest$skewness_yaw_forearm		<-NULL
+  blindTest$max_yaw_forearm			<-NULL
+  blindTest$min_yaw_forearm			<-NULL
+  blindTest$amplitude_yaw_forearm		<-NULL
+  blindTest$X                  <-NULL
+  blindTest$roll_belt   <-NULL
+  blindTest$pitch_belt   <-NULL
+  blindTest$yaw_belt     <-NULL
+  blindTest$total_accel_belt   <-NULL
+  blindTest$gyros_belt_x  <-NULL
+  blindTest$gyros_belt_y         <-NULL
+```
+
+#Create training and testing data sets for developing and validating the model. 
+
+Create a smaller version of this data set to accommodate an older computer.  Random sampling insures the integrity and representativeness of the data for model development.
+
+```{r}
+
+  library(AppliedPredictiveModeling)
+  library(caret)
+  set.seed(23451)
+  inpart1 = createDataPartition(y=develop$classe, p = .5, list=FALSE)
+  part1 = develop[inpart1,]
+  part2 = develop[-inpart1,]
+
+  set.seed(1235)
+  inTrain <- createDataPartition(y=part2$classe, p=0.6, list=FALSE)
+  small_training <- part2[inTrain,]
+  small_testing <- part2[-inTrain,]
+
+```
+
+#Examine the structure of the training data and analyze the variables in the data set.
+
+Plot the categories of the outcome classe variable to be modeled.
+
+```{r}
+  dim(develop)
+  summary(develop)
+  plot(develop$classe)
+```
+
+#Estimate a simple tree model.
+
+Create predictions on the small testing data set as well as the 20 test cases provided by the instructor.
+
+```{r}
+  set.seed(12347)
+  modFit0 <- train(small_training$classe ~ ., data = small_training, method="rpart")
+  print(modFit0, digits=3)
+  
+  print(modFit0$finalModel, digits=3)
+
+  predictions <- predict(modFit0, newdata=small_testing)
+  print(confusionMatrix(predictions, small_testing$classe), digits=4)
+
+  print(predict(modFit0, newdata=blindTest))
+```
+
+The accuracy of the simple classification model is quite low with 49.7% of the out of sample observations correctly predicted.  This is not a good prediction model.
+
+#Fit a model using Random Forests Technique.  
+
+Predict values on the testing sample and compare predicted versus actual classifications in a table.  Examine the Accuracy as a measure of goodness of fit.
+
+```{r}
+
+  set.seed(3215)
+  modFit1 <- train(small_training$classe ~ ., method="rf", preProcess=c("center", "scale"), trControl=trainControl(method = "cv", number = 4), data=small_training)
+  print(modFit1, digits=3)
+  
+  predictions <- predict(modFit1, newdata=small_testing)
+  print(confusionMatrix(predictions, small_testing$classe), digits=4)
+
+  print(predict(modFit1, newdata=blindTest))
+
+```
+
+Compute fraction correctly predicted
+
+```{r}
+  pred1Right<-predictions==small_testing$classe
+  mean(pred1Right)
+```
+
+The Random Forests model fits quite well with high accuracy and low out of sample error on the out of sample testing data set.  Out of sample error is computed as 1-Accuracy on the test data set or 1-0.9655876=0.0344124.  Approximately 3.4% of the cases in the testing partition were predicted incorrectly.
+
+
+#Fit a model using Bootsting Technique.  
+
+Next we try to improve ont he Random Forests model by fitting a model using Boosting.  We predict on the testing sample and compute the accuracy.
+
+```{r}
+  set.seed(3215)
+  modFit2 <- train(small_training$classe ~ ., method="gbm", preProcess=c("center", "scale"), trControl=trainControl(method = "cv", number = 4), data=small_training)
+  print(modFit2, digits=3)
+  
+  predictions2 <- predict(modFit2, newdata=small_testing)
+  print(confusionMatrix(predictions2, small_testing$classe), digits=4)
+
+  print(predict(modFit2, newdata=blindTest))
+
+```
+
+
+Compute fraction correctly predicted
+
+```{r}
+  pred2Right<-predictions2==small_testing$classe
+  mean(pred2Right)
+
+```
+
+The Boosting model fits very well with high accuracy and low out of sample error on the out of sample testing data set.  Out of sample error is computed as 1-Accuracy on the test data set or 1-0.9191945=0.0808055.  Approximately 8.1% of the cases in the testing partition were predicted incorrectly.
+
+#OUt of sample error
+
+Random Forests turned out to be a bit more more accurate than Boosting.  Based on the out of sample training data set, we estimate an error rate of 3.4% for the Random Forests model versus 8.1% for the Boosting model.  I decide to use the Random Forest method to score the 20 test cases provided by the instructor for submission.
+
+#Generate predictions for blind test data
+
+Using the code provided by the instructor, we construct predictions on the provided 20 test cases for submission.
+
+
+```{r}
+  answers <- predict(modFit1, blindTest)
+
+  pml_write_files = function(x){
+  n = length(x)
+    for(i in 1:n){
+      filename = paste0("problem_id_",i,".txt")
+      write.table(x[i],file=filename,quote=FALSE,row.names=FALSE,col.names=FALSE)
+    }
+  }
+  pml_write_files(answers)
+```
