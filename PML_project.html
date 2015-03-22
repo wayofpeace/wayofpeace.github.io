@@ -584,8 +584,8 @@ img {
 <pre><code>## [1] 0.9655876</code></pre>
 <p>The Random Forests model fits quite well with high accuracy and low out of sample error on the out of sample testing data set. Out of sample error is computed as 1-Accuracy on the test data set or 1-0.9655876=0.0344124. Approximately 3.4% of the cases in the testing partition were predicted incorrectly.</p>
 </div>
-<div id="fit-a-model-using-bootsting-technique." class="section level1">
-<h1>Fit a model using Bootsting Technique.</h1>
+<div id="fit-a-model-using-boosting-technique" class="section level1">
+<h1>Fit a model using Boosting Technique</h1>
 <p>Next we try to improve ont he Random Forests model by fitting a model using Boosting. We predict on the testing sample and compute the accuracy.</p>
 <pre class="r"><code>  set.seed(3215)
   modFit2 &lt;- train(small_training$classe ~ ., method=&quot;gbm&quot;, preProcess=c(&quot;center&quot;, &quot;scale&quot;), trControl=trainControl(method = &quot;cv&quot;, number = 4), data=small_training)</code></pre>
@@ -933,7 +933,7 @@ img {
 <p>The Boosting model fits very well with high accuracy and low out of sample error on the out of sample testing data set. Out of sample error is computed as 1-Accuracy on the test data set or 1-0.9191945=0.0808055. Approximately 8.1% of the cases in the testing partition were predicted incorrectly.</p>
 </div>
 <div id="out-of-sample-error" class="section level1">
-<h1>OUt of sample error</h1>
+<h1>Out of sample error</h1>
 <p>Random Forests turned out to be a bit more more accurate than Boosting. Based on the out of sample training data set, we estimate an error rate of 3.4% for the Random Forests model versus 8.1% for the Boosting model. I decide to use the Random Forest method to score the 20 test cases provided by the instructor for submission.</p>
 </div>
 <div id="generate-predictions-for-blind-test-data" class="section level1">
